@@ -3,7 +3,6 @@ package io.confluent.developer.wordcount
 import com.github.javafaker.Faker
 import io.confluent.developer.kotlin.extensions.KSerdes.grouped
 import io.confluent.developer.kotlin.extensions.KSerdes.producedWith
-import org.apache.kafka.common.serialization.Serdes
 import org.apache.kafka.streams.KeyValue
 import org.apache.kafka.streams.kstream.KStream
 import org.apache.kafka.streams.kstream.Materialized
@@ -30,23 +29,20 @@ class WordcountSpringCloudStreamKotlinApplication {
   @Bean
   fun consumeChuckNorris(): Consumer<Message<String>> {
     return Consumer { s: Message<String> ->
-      println(
-        "FACT: \u001B[3m «" + s.payload + "\u001B[0m»"
-      )
+      println("FACT: \u001B[3m «" + s.payload + "\u001B[0m»")
     }
   }
 
   @Bean
   fun processWords(): Function<KStream<String?, String>, KStream<String, Long>> {
     return Function { inputStream: KStream<String?, String> ->
-      val stringSerde = Serdes.String()
       val countsStream = inputStream
         .flatMapValues { value: String -> value.toLowerCase().split("\\W+".toRegex()) }
         .map { _: String?, value: String -> KeyValue(value, value) }
         .groupByKey(grouped<String, String>())
         .count(Materialized.`as`("word-count-state-store"))
         .toStream()
-      countsStream.to("counts", producedWith<String,Long>())
+      countsStream.to("counts", producedWith<String, Long>())
       countsStream
     }
   }

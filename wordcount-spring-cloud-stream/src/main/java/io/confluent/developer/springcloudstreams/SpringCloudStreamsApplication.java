@@ -8,6 +8,7 @@ import org.apache.kafka.streams.KeyValue;
 import org.apache.kafka.streams.kstream.Grouped;
 import org.apache.kafka.streams.kstream.KStream;
 import org.apache.kafka.streams.kstream.Materialized;
+import org.apache.kafka.streams.kstream.Printed;
 import org.apache.kafka.streams.kstream.Produced;
 import org.apache.kafka.streams.kstream.ValueMapper;
 import org.apache.kafka.streams.state.QueryableStoreTypes;
@@ -57,8 +58,10 @@ public class SpringCloudStreamsApplication {
   public Function<KStream<String, String>, KStream<String, Long>> processWords() {
     return inputStream -> {
       final Serde<String> stringSerde = Serdes.String();
-      final KStream<String, Long> countsStream = inputStream
-          .flatMapValues(value -> asList(value.toLowerCase().split("\\W+")))
+      final KStream<String, String> stringStringKStream = inputStream
+          .flatMapValues(value -> asList(value.toLowerCase().split("\\W+")));
+      stringStringKStream.print(Printed.toSysOut());
+      final KStream<String, Long> countsStream = stringStringKStream
           .map((key, value) -> new KeyValue<>(value, value))
           .groupByKey(Grouped.with(stringSerde, stringSerde))
           .count(Materialized.as("word-count-state-store"))
